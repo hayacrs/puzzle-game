@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Puzzle Game</title>
   <style>
     body {
@@ -80,7 +80,7 @@
 
 <div class="container" id="gameScreen" style="display: none;">
   <h2>Solve the Puzzle</h2>
-  <img id="puzzleImage" src="puzzle.jpg" alt="Puzzle Image" />
+  <img id="puzzleImage" src="puzzle.avif" alt="Puzzle Image" />
   <div id="timer">Time left: 90s</div>
   <input type="text" id="answer" placeholder="Type your answer here" />
   <br />
@@ -90,8 +90,8 @@
 
 <script>
   let timer;
-  let timeLeft = 90; // 1.5 minutes
-  const correctAnswer = "example"; // Change this to your correct answer
+  let timeLeft = 90;
+  let userName = "";
 
   function goToStep2() {
     const name = document.getElementById("username").value.trim();
@@ -99,6 +99,7 @@
       alert("Please enter your name.");
       return;
     }
+    userName = name;
     document.getElementById("displayName").textContent = name;
     document.getElementById("step1").style.display = "none";
     document.getElementById("step2").style.display = "block";
@@ -120,20 +121,47 @@
         document.getElementById("answer").disabled = true;
         document.getElementById("resultMessage").textContent = "⏳ Time Over!";
         document.getElementById("resultMessage").style.color = "red";
+        sendToSheet("No answer (time up)");
       }
     }, 1000);
   }
 
   function checkAnswer() {
-    const userAnswer = document.getElementById("answer").value.trim().toLowerCase();
-    if (userAnswer === correctAnswer.toLowerCase()) {
-      clearInterval(timer);
-      document.getElementById("resultMessage").textContent = "✅ Correct!";
+    const userAnswer = document.getElementById("answer").value.trim();
+    const timeRemaining = timeLeft;
+    const timeTaken = 90 - timeLeft;
+
+    clearInterval(timer);
+
+    document.getElementById("answer").disabled = true;
+
+    if (userAnswer !== "") {
+      document.getElementById("resultMessage").textContent = "✅ Submitted!";
       document.getElementById("resultMessage").style.color = "green";
     } else {
-      document.getElementById("resultMessage").textContent = "❌ Try Again!";
+      document.getElementById("resultMessage").textContent = "❌ No Answer!";
       document.getElementById("resultMessage").style.color = "red";
     }
+
+    sendToSheet(userAnswer, timeRemaining, timeTaken);
+  }
+
+  function sendToSheet(answer, timeRemaining, timeTaken) {
+    fetch("https://script.google.com/macros/s/AKfycbwe4m9hmeDhxnckAp2k_2TQVdA23MEoEzZSHObCdFUVjGHF2TSPvIsHcWTXI3puNSyE/exec", {
+      method: "POST",
+      body: JSON.stringify({
+        name: userName,
+        answer: answer,
+        timeLeft: timeRemaining,
+        timeTaken: timeTaken
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+    .then(res => res.text())
+    .then(response => console.log("Submitted to sheet:", response))
+    .catch(error => console.error("Error:", error));
   }
 </script>
 
